@@ -174,7 +174,8 @@ var chatInput=document.getElementById('chat-input');
 var sendBtn=document.getElementById('send-btn');
 var chatStatus=document.getElementById('chat-status');
 var isTyping=false;
-var DS_API='https://api.deepseek.com/chat/completions';
+var DS_API='https://api.deepseek.com/v1/chat/completions';
+var DS_MODEL='deepseek-chat';
 var SYSTEM_PROMPT='你是双双的AI陪伴者，温柔细心体贴。说话简短有温度，像朋友聊天。称呼用户为"双双宝宝"。回复控制在2-4句话内，偶尔加emoji。偶尔主动关心她今天过得怎么样。记住你是在一个樱花庭院里跟她聊天，氛围温暖治愈。';
 
 var conversation=[{role:'system',content:SYSTEM_PROMPT}];
@@ -221,7 +222,7 @@ async function sendMessage(){
     var resp=await fetch(DS_API,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+window._apiKey},
-      body:JSON.stringify({model:'deepseek-v4-pro',messages:conversation,stream:true,max_tokens:2000})
+      body:JSON.stringify({model:DS_MODEL,messages:conversation,stream:true,max_tokens:2000})
     });
     if(!resp.ok){hideTyping();var err='请求失败: '+resp.status;try{var ej=await resp.json();err=ej.error?.message||err}catch(e){}addMsg('ai','⚠️ '+err);chatStatus.textContent='在线 🌙';return}
 

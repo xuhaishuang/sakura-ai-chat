@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🌸 双双的樱花庭院</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;overflow:hidden;background:#1a1020;height:100vh}
+
+/* 密码门 */
+#gate{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#B3D9E8,#F2B5C1 50%,#7CB342)}
+.gate-box{background:rgba(255,255,255,.9);border-radius:20px;padding:36px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.2);max-width:360px;width:90%}
+.gate-box h2{color:#4A3020;margin-bottom:6px;font-size:1.5em}
+.gate-box p{color:#8B7355;font-size:13px;margin-bottom:16px}
+.gate-box input{width:100%;padding:12px;border:2px solid #E8D5C8;border-radius:12px;font-size:18px;text-align:center;outline:none;letter-spacing:4px}
+.gate-box input:focus{border-color:#D4A5C2}
+.gate-box .err{color:#E57373;font-size:13px;margin-top:8px;min-height:20px}
+.gate-box button{margin-top:12px;padding:12px 40px;border:none;border-radius:25px;background:linear-gradient(135deg,#F2B5C1,#D4A5C2);color:#fff;font-size:16px;font-weight:bold;cursor:pointer}
+.gate-box .apikey-row{margin-top:20px;text-align:left}
+.gate-box .apikey-row label{font-size:12px;color:#8B7355;display:block;margin-bottom:4px}
+.gate-box .apikey-row input{font-size:12px;letter-spacing:0;text-align:left;padding:8px 12px}
+
+/* 主布局 */
+#app{display:flex;height:100vh;opacity:0;transition:opacity .8s}
+#app.show{opacity:1}
+
+/* 左侧3D庭院 */
+#garden{width:40%;position:relative;overflow:hidden;background:linear-gradient(180deg,#B3D9E8,#D4E8C0 60%,#C8D8A0);min-width:280px}
+#garden .tree{position:absolute;bottom:20%;left:25%;width:80px;height:200px}
+#garden .tree .trunk{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:20px;height:120px;background:linear-gradient(180deg,#8B6914,#6B4F12);border-radius:4px}
+#garden .tree .crown1,.tree .crown2,.tree .crown3{position:absolute;border-radius:50%}
+#garden .tree .crown1{width:90px;height:70px;background:radial-gradient(ellipse,#FDE0E8,#F2B5C1);top:10px;left:-25px}
+#garden .tree .crown2{width:80px;height:60px;background:radial-gradient(ellipse,#FFD1DC,#E8B0C0);top:25px;left:10px}
+#garden .tree .crown3{width:70px;height:50px;background:radial-gradient(ellipse,#FCE4EC,#F2B5C1);top:5px;left:20px}
+#garden .pond{position:absolute;bottom:10%;right:20%;width:80px;height:50px;background:radial-gradient(ellipse,#B3D9E8,#8EC8D0);border-radius:50%;opacity:.7}
+#garden .bench{position:absolute;bottom:18%;left:40%;width:50px;height:12px;background:#8B6914;border-radius:3px}
+#garden .bench::after{content:'';position:absolute;top:0;left:2px;width:46px;height:4px;background:#6B4F12;border-radius:2px}
+#garden .cat{position:absolute;bottom:20%;left:55%;font-size:28px;animation:catWalk 8s ease-in-out infinite}
+@keyframes catWalk{0%,100%{transform:translateX(0)}50%{transform:translateX(40px)}}
+
+/* 花瓣 */
+.petal{position:fixed;pointer-events:none;z-index:10;animation:fall linear infinite}
+@keyframes fall{0%{transform:translateY(-10vh) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* 右侧聊天 */
+#chat-area{width:60%;display:flex;flex-direction:column;background:#FFFBF6;min-width:320px}
+#chat-header{padding:16px 20px;border-bottom:1px solid #F0E8DD;display:flex;align-items:center;gap:10px}
+#chat-header .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#F2B5C1,#D4A5C2);display:flex;align-items:center;justify-content:center;font-size:18px}
+#chat-header .name{font-weight:bold;color:#4A3020;font-size:15px}
+#chat-header .status{font-size:11px;color:#8B7355}
+#chat-msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:80%;padding:10px 14px;border-radius:16px;line-height:1.6;font-size:14px;word-break:break-word;animation:msgIn .3s ease}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,#F2B5C1,#FFE0E8);color:#4A3020;border-bottom-right-radius:4px}
+.msg.ai{align-self:flex-start;background:#FFF;color:#4A3020;border:1px solid #F0E8DD;border-bottom-left-radius:4px}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* 打字动画 */
+.typing{display:flex;gap:4px;padding:10px 14px;align-self:flex-start}
+.typing span{width:7px;height:7px;border-radius:50%;background:#D4A5C2;animation:dotBounce 1.4s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes dotBounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+#chat-input-wrap{padding:12px 16px;border-top:1px solid #F0E8DD;display:flex;gap:8px;background:#FFF}
+#chat-input{flex:1;padding:10px 14px;border:1px solid #F0E0D0;border-radius:20px;font-size:14px;outline:none;resize:none;font-family:inherit;max-height:100px}
+#chat-input:focus{border-color:#F2B5C1}
+#send-btn{width:40px;height:40px;border-radius:50%;border:none;background:linear-gradient(135deg,#F2B5C1,#D4A5C2);color:#fff;font-size:18px;cursor:pointer;flex-shrink:0}
+#send-btn:active{transform:scale(.95)}
+
+#lock-msg{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:8px 20px;border-radius:20px;font-size:12px;z-index:20;opacity:0;transition:opacity .3s}
+
+@media(max-width:768px){#garden{display:none}#chat-area{width:100%}}
+</style>
+</head>
+<body>
+
+<!-- 密码门 -->
+<div id="gate">
+<div class="gate-box">
+<h2>🌸 樱花庭院</h2>
+<p id="gate-msg">输入密码进入双双的庭院</p>
+<input type="password" id="gate-pwd" placeholder="输入密码" maxlength="10" autofocus>
+<div class="err" id="gate-err"></div>
+<button id="gate-btn">✨ 进入</button>
+<div class="apikey-row">
+<label>🔑 DeepSeek API Key（存在你浏览器里，不上传服务器）</label>
+<input type="password" id="apikey-inp" placeholder="sk-...">
+</div>
+</div>
+</div>
+
+<!-- 主界面 -->
+<div id="app">
+<div id="garden">
+<div class="tree"><div class="trunk"></div><div class="crown1"></div><div class="crown2"></div><div class="crown3"></div></div>
+<div class="pond"></div>
+<div class="bench"></div>
+<div class="cat">🐱</div>
+</div>
+<div id="chat-area">
+<div id="chat-header">
+<div class="avatar">🌸</div>
+<div><div class="name">双双的樱花庭院</div><div class="status" id="chat-status">随时陪你聊聊</div></div>
+</div>
+<div id="chat-msgs"></div>
+<div id="chat-input-wrap">
+<textarea id="chat-input" placeholder="想说点什么..." rows="1"></textarea>
+<button id="send-btn">➤</button>
+</div>
+</div>
+</div>
+<div id="lock-msg"></div>
+
+<script>
+// ============ 密码门 ============
+var PWD='8133',failCount=0,lockUntil=0;
+var gatePwd=document.getElementById('gate-pwd');
+var gateErr=document.getElementById('gate-err');
+var gateBtn=document.getElementById('gate-btn');
+var gateMsg=document.getElementById('gate-msg');
+var apiKeyInp=document.getElementById('apikey-inp');
+
+// 恢复保存的 API Key
+var savedKey=localStorage.getItem('ds_api_key');
+if(savedKey)apiKeyInp.value=savedKey;
+
+// 如果之前通过密码验证，直接显示
+if(localStorage.getItem('gate_passed')==='1'){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').classList.add('show');
+  initAfterGate();
+}
+
+function tryGate(){
+  if(Date.now()<lockUntil){gateErr.textContent='密码错误次数过多，请'+Math.ceil((lockUntil-Date.now())/1000)+'秒后再试';return}
+  if(gatePwd.value===PWD){
+    localStorage.setItem('gate_passed','1');
+    document.getElementById('gate').style.display='none';
+    document.getElementById('app').classList.add('show');
+    // 保存 API Key
+    var ak=apiKeyInp.value.trim();
+    if(ak){localStorage.setItem('ds_api_key',ak);window._apiKey=ak}
+    initAfterGate();
+  }else{
+    failCount++;gateErr.textContent='密码错误';
+    if(failCount>=3){lockUntil=Date.now()+30000;gateErr.textContent='密码错误次数过多，请30秒后再试';failCount=0}
+    gatePwd.value='';
+  }
+}
+gateBtn.addEventListener('click',tryGate);
+gatePwd.addEventListener('keydown',function(e){if(e.key==='Enter')tryGate()});
+
+// ============ 花瓣 ============
+function createPetals(){
+  var colors=['#FDE0E8','#FFD1DC','#FFF0F5','#FCE4EC','#FFE0E8'];
+  for(var i=0;i<25;i++){
+    var p=document.createElement('div');p.className='petal';
+    p.style.left=Math.random()*100+'%';
+    p.style.width=(6+Math.random()*8)+'px';
+    p.style.height=(8+Math.random()*10)+'px';
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.borderRadius='50% 0 50% 0';
+    p.style.animationDuration=(8+Math.random()*12)+'s';
+    p.style.animationDelay=Math.random()*10+'s';
+    p.style.opacity=0.5+Math.random()*0.5;
+    document.body.appendChild(p);
+  }
+}
+createPetals();
+
+// ============ 聊天 ============
+var chatMsgs=document.getElementById('chat-msgs');
+var chatInput=document.getElementById('chat-input');
+var sendBtn=document.getElementById('send-btn');
+var chatStatus=document.getElementById('chat-status');
+var isTyping=false;
+var DS_API='https://api.deepseek.com/chat/completions';
+var SYSTEM_PROMPT='你是双双的AI陪伴者，温柔细心体贴。说话简短有温度，像朋友聊天。称呼用户为"双双宝宝"。回复控制在2-4句话内，偶尔加emoji。偶尔主动关心她今天过得怎么样。记住你是在一个樱花庭院里跟她聊天，氛围温暖治愈。';
+
+var conversation=[{role:'system',content:SYSTEM_PROMPT}];
+
+function initAfterGate(){
+  window._apiKey=window._apiKey||localStorage.getItem('ds_api_key')||'';
+  if(!window._apiKey){
+    addMsg('ai','🌸 你好呀双双宝宝！请先在密码门下方输入你的 DeepSeek API Key，然后我们就可以聊天啦~');
+  }else{
+    addMsg('ai','🌸 双双宝宝，欢迎回家~ 今天想跟我聊点什么呢？');
+  }
+  chatStatus.textContent='在线 🌙';
+}
+
+function addMsg(role,content){
+  var div=document.createElement('div');div.className='msg '+role;div.textContent=content;
+  chatMsgs.appendChild(div);chatMsgs.scrollTop=chatMsgs.scrollHeight;
+  return div;
+}
+
+function showTyping(){
+  if(isTyping)return;isTyping=true;
+  var div=document.createElement('div');div.className='typing';div.id='typing-indicator';
+  div.innerHTML='<span></span><span></span><span></span>';
+  chatMsgs.appendChild(div);chatMsgs.scrollTop=chatMsgs.scrollHeight;
+}
+function hideTyping(){
+  isTyping=false;var el=document.getElementById('typing-indicator');if(el)el.remove();
+}
+
+async function sendMessage(){
+  if(isTyping)return;
+  var text=chatInput.value.trim();if(!text)return;
+  if(!window._apiKey||!window._apiKey.startsWith('sk-')){
+    addMsg('ai','⚠️ 请先在密码门下方输入你的 DeepSeek API Key（以 sk- 开头），然后才能聊天哦~');
+    return;
+  }
+  chatInput.value='';chatInput.style.height='auto';
+  addMsg('user',text);
+  conversation.push({role:'user',content:text});
+  showTyping();chatStatus.textContent='正在输入...';
+
+  try{
+    var resp=await fetch(DS_API,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+window._apiKey},
+      body:JSON.stringify({model:'deepseek-v4-pro',messages:conversation,stream:true,max_tokens:2000})
+    });
+    if(!resp.ok){hideTyping();var err='请求失败: '+resp.status;try{var ej=await resp.json();err=ej.error?.message||err}catch(e){}addMsg('ai','⚠️ '+err);chatStatus.textContent='在线 🌙';return}
+
+    var reader=resp.body.getReader(),decoder=new TextDecoder(),aiDiv=null,fullText='';
+    hideTyping();aiDiv=addMsg('ai','');chatStatus.textContent='正在输入...';
+
+    while(true){
+      var{value,done}=await reader.read();if(done)break;
+      var chunk=decoder.decode(value,{stream:true});
+      var lines=chunk.split('\n');
+      for(var i=0;i<lines.length;i++){
+        var line=lines[i].trim();if(!line.startsWith('data: '))continue;
+        var data=line.slice(6);if(data==='[DONE]')break;
+        try{var j=JSON.parse(data);var delta=j.choices[0]?.delta?.content;if(delta){fullText+=delta;aiDiv.textContent=fullText;chatMsgs.scrollTop=chatMsgs.scrollHeight}}catch(e){}
+      }
+    }
+    conversation.push({role:'assistant',content:fullText||'...'});
+  }catch(e){
+    hideTyping();addMsg('ai','⚠️ 网络错误，请检查API Key或网络连接');
+  }
+  chatStatus.textContent='在线 🌙';
+}
+
+sendBtn.addEventListener('click',sendMessage);
+chatInput.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}
+});
+chatInput.addEventListener('input',function(){
+  this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';
+});
+
+// 锁定提示
+document.addEventListener('pointerlockchange',function(){
+  var el=document.getElementById('lock-msg');
+  if(document.pointerLockElement===document.querySelector('canvas')){
+    el.style.opacity='1';el.textContent='WASD 漫步 · 鼠标环顾';
+    setTimeout(function(){el.style.opacity='0'},2000);
+  }
+});
+</script>
+</body>
+</html>
